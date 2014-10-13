@@ -30,6 +30,7 @@
 
 #include "qlcfixturedef.h"
 #include "qlcmacros.h"
+#include "showmanager.h"
 
 #include "functionselection.h"
 #include "speeddialwidget.h"
@@ -477,14 +478,84 @@ void ChaserEditor::slotLowerClicked()
 void ChaserEditor::slotSpeedDialToggle(bool state)
 {
     if (state == true)
-        updateSpeedDials();
+		{
+			qDebug() << "Record chaser\n";
+
+			//Add the first empty step as a step holder for the initial blank duration
+			ChaserStep step(m_chaser->getBoundSceneID(), 0, 0, 0);
+			m_chaser->addStep(step);
+
+			//Add input connector
+			connect(m_doc->inputOutputMap(),
+					SIGNAL(inputValueChanged(quint32,quint32,uchar)),
+					this, SLOT(slotInputValueChanged(quint32,quint32,uchar)));
+			
+		}
     else
     {
-        if (m_speedDials != NULL)
-            m_speedDials->deleteLater();
-        m_speedDials = NULL;
+ 			qDebug() << "Stop Record chaser\n";
+ 			disconnect(m_doc->inputOutputMap(),
+ 					SIGNAL(inputValueChanged(quint32,quint32,uchar)),
+ 					this, SLOT(slotInputValueChanged(quint32,quint32,uchar)));
+			
     }
 }
+
+void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, uchar value)
+{
+	qDebug("Got Input %i %i %i\n", universe, channel, value);
+
+	//Get the scene values
+	Scene *currScene = qobject_cast<Scene*> (m_doc->function(m_chaser->getBoundSceneID()));
+	QList<SceneValue>  sceneValues = currScene->values();
+
+	////Get the show timer
+	qDebug() << "Get the show\n";
+
+	Show* m_show = NULL;
+	foreach (Function* f, m_doc->functionsByType(Function::Show))
+	{
+		//Get the last one for now; TODO, pick the current show somehow
+		m_show = qobject_cast<Show *>(f);
+	}
+
+	if (m_show == NULL)
+	{
+		qDebug() << Q_FUNC_INFO << "Invalid show !";
+		return;
+	} 
+	qDebug() << "Got the show, getting the time\n";
+
+
+	qDebug() << "Time " << m_show->getElapsedTime();
+	
+	//quint32 startTime = m_chaser->getStartTime();
+	//qDebug("Chaser start time %i elaspe %i\n", startTime, m_chaser->elapsed());
+
+	int note = channel-128;
+	qDebug() << "NoteV2: " << note << " length " << sceneValues.length();
+	if (note >= 0 && note < sceneValues.length())
+	{
+		quint32 duration = m_show->getElapsedTime() - m_chaser->totalDuration();
+		qDebug() << "Duration " <<  duration << " show elapsed " << m_show->getElapsedTime() << " chaser duration " << m_chaser->totalDuration();
+		//Set the last step duration
+		ChaserStep pStep = m_chaser->stepAt(m_chaser->stepsCount()-1);
+		pStep.duration = duration;
+    m_chaser->replaceStep(pStep, m_chaser->stepsCount()-1);
+
+
+		ChaserStep step(m_chaser->getBoundSceneID(), 0, duration, 0);
+		step.duration =  0;
+		SceneValue chan = sceneValues[note];
+		chan.value = value;
+		step.values.append(chan);
+
+		m_chaser->addStep(step);
+		qDebug() << "Adding: " << chan.value << " note=" << note << "step duration " << step.duration;
+	}
+	//printSteps();
+}
+
 
 void ChaserEditor::slotItemSelectionChanged()
 {

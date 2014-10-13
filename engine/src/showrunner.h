@@ -50,6 +50,8 @@ public:
 
     void write();
 
+		quint32 getElapsedTime();
+		
 private:
     const Doc* m_doc;
 

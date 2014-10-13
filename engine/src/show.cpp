@@ -393,3 +393,12 @@ void Show::adjustAttribute(qreal fraction, int attributeIndex)
     }
 }
 
+quint32 Show::getElapsedTime()
+{
+	if (m_runner != NULL)
+		return m_runner->getElapsedTime();
+	else
+		return 0;
+}
+
+

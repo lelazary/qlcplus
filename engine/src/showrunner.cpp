@@ -215,3 +215,8 @@ void ShowRunner::adjustIntensity(qreal fraction, Track *track)
     }
 }
 
+quint32 ShowRunner::getElapsedTime()
+{
+	return m_elapsedTime;
+}
+

@@ -64,6 +64,7 @@ public:
 
     QString getTimeDivisionType();
     int getTimeDivisionBPM();
+    quint32 getElapsedTime();
 
 private:
     QString m_timeDivType;

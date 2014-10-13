@@ -71,7 +71,8 @@ public slots:
 
 private slots:
     void slotNameEdited(const QString& text);
-
+ 		void slotInputValueChanged(quint32 universe, quint32 channel, uchar value);
+		
 private:
     Doc* m_doc;
     Chaser* m_chaser; // The Chaser being edited
