@@ -91,6 +91,7 @@
         <file alias="panic.png">../../gfx/panic.png</file>
         <file alias="player_play.png">../../gfx/player_play.png</file>
         <file alias="player_stop.png">../../gfx/player_stop.png</file>
+        <file alias="player_rec.png">../../gfx/player_rec.png</file>
         <file alias="prism.png">../../gfx/prism.png</file>
         <file alias="qlcplus.png">../../gfx/qlcplus.png</file>
         <file alias="qt.png">../../gfx/qt.png</file>

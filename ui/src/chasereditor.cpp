@@ -221,6 +221,7 @@ ChaserEditor::ChaserEditor(QWidget* parent, Chaser* chaser, Doc* doc, bool liveM
 
     //connect(m_testButton, SIGNAL(toggled(bool)), this, SLOT(slotTestToggled(bool)));
     connect(m_testPlayButton, SIGNAL(clicked()), this, SLOT(slotTestPlay()));
+    connect(m_RecButton, SIGNAL(toggled(bool)), this, SLOT(slotRecord(bool)));
     connect(m_testStopButton, SIGNAL(clicked()), this, SLOT(slotTestStop()));
     connect(m_testPreviousButton, SIGNAL(clicked()), this, SLOT(slotTestPreviousClicked()));
     connect(m_testNextButton, SIGNAL(clicked()), this, SLOT(slotTestNextClicked()));
@@ -476,6 +477,18 @@ void ChaserEditor::slotLowerClicked()
 }
 
 void ChaserEditor::slotSpeedDialToggle(bool state)
+{
+    if (state == true)
+			updateSpeedDials();
+    else
+    {
+			if (m_speedDials != NULL)
+				m_speedDials->deleteLater();
+			m_speedDials = NULL;
+    }
+}
+
+void ChaserEditor::slotRecord(bool state)
 {
     if (state == true)
 		{

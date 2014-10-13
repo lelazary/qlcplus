@@ -632,6 +632,26 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="m_RecButton">
+       <property name="toolTip">
+        <string>Record a chaser from an input</string>
+       </property>
+       <property name="icon">
+        <iconset resource="qlcui.qrc">
+         <normaloff>:/player_rec.png</normaloff>:/player_rec.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+		</item>
+     <item>
       <widget class="QToolButton" name="m_testPreviousButton">
        <property name="toolTip">
         <string>Skip to the previous step</string>

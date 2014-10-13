@@ -139,6 +139,7 @@ private:
      ************************************************************************/
 private slots:
     void slotRestartTest();
+    void slotRecord(bool);
     void slotTestPlay();
     void slotTestStop();
     void slotTestPreviousClicked();
