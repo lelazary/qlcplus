@@ -494,8 +494,16 @@ void ChaserEditor::slotRecord(bool state)
 		{
 			qDebug() << "Record chaser\n";
 
-			//Add the first empty step as a step holder for the initial blank duration
+			//Add the first empty step as a step holder for the initial duration
 			ChaserStep step(m_chaser->getBoundSceneID(), 0, 0, 0);
+			Scene *currScene = qobject_cast<Scene*> (m_doc->function(m_chaser->getBoundSceneID()));
+			QListIterator <SceneValue> it(currScene->values());
+			while (it.hasNext() == true)
+			{
+				SceneValue chan(it.next());
+				step.values.append(chan);
+			}
+
 			m_chaser->addStep(step);
 
 			//Add input connector
@@ -562,6 +570,9 @@ void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, ucha
 		SceneValue chan = sceneValues[note];
 		chan.value = value;
 		step.values.append(chan);
+		//Set the scene value
+		if (step.values.count() > 0)
+			emit applyValues(step.values);
 
 		m_chaser->addStep(step);
 		qDebug() << "Adding: " << chan.value << " note=" << note << "step duration " << step.duration;
