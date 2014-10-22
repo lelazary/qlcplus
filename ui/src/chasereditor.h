@@ -24,6 +24,7 @@
 #include "ui_chasereditor.h"
 #include "scene.h"
 #include "doc.h"
+#include "showmanager.h"
 
 class Chaser;
 class Function;
@@ -185,6 +186,8 @@ private:
 
 private:
     bool m_liveMode;
+		quint32 m_prevShowTime; //keep track of the show time for duration calc
+		Show* m_currShow; //the current show pointer
 };
 
 /** @} */

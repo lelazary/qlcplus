@@ -492,9 +492,28 @@ void ChaserEditor::slotRecord(bool state)
 {
     if (state == true)
 		{
-			qDebug() << "Record chaser\n";
+			qDebug() << "Record chaser started";
+			//Get the show and the start time of this chaser in the show
+			//TODO: is there a more efficient manner to do this?
+			m_prevShowTime = 0;
+			m_currShow = NULL;
+			foreach (Function* f, m_doc->functionsByType(Function::Show))
+			{
+				//Get the show that has this chaser
+				//TODO: is there a better way of doing this?
+				m_currShow = qobject_cast<Show *>(f);
+				if (m_currShow != NULL)
+				{
+					foreach (Track* t, m_currShow->tracks())
+						foreach (ShowFunction* sf, t->showFunctions())
+						if (sf->functionID() == m_chaser->id())
+							m_prevShowTime = sf->startTime();
+				}
+			}
+			qDebug() << "Chaser start time " << m_prevShowTime;
 
-			//Add the first empty step as a step holder for the initial duration
+
+			//Add the first empty step as a step holder for the initial empty duration
 			ChaserStep step(m_chaser->getBoundSceneID(), 0, 0, 0);
 			Scene *currScene = qobject_cast<Scene*> (m_doc->function(m_chaser->getBoundSceneID()));
 			QListIterator <SceneValue> it(currScene->values());
@@ -503,8 +522,8 @@ void ChaserEditor::slotRecord(bool state)
 				SceneValue chan(it.next());
 				step.values.append(chan);
 			}
-
 			m_chaser->addStep(step);
+
 
 			//Add input connector
 			connect(m_doc->inputOutputMap(),
@@ -514,51 +533,38 @@ void ChaserEditor::slotRecord(bool state)
 		}
     else
     {
- 			qDebug() << "Stop Record chaser\n";
+ 			qDebug() << "Record chaser stopped\n";
  			disconnect(m_doc->inputOutputMap(),
  					SIGNAL(inputValueChanged(quint32,quint32,uchar)),
  					this, SLOT(slotInputValueChanged(quint32,quint32,uchar)));
+			updateTree(true);
 			
     }
 }
 
 void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, uchar value)
 {
-	qDebug("Got Input %i %i %i\n", universe, channel, value);
-
+	qDebug() << "Input: " << universe << " " << channel << " " << value;
 	//Get the scene values
 	Scene *currScene = qobject_cast<Scene*> (m_doc->function(m_chaser->getBoundSceneID()));
 	QList<SceneValue>  sceneValues = currScene->values();
 
-	////Get the show timer
-	qDebug() << "Get the show\n";
-
-	Show* m_show = NULL;
-	foreach (Function* f, m_doc->functionsByType(Function::Show))
-	{
-		//Get the last one for now; TODO, pick the current show somehow
-		m_show = qobject_cast<Show *>(f);
-	}
-
-	if (m_show == NULL)
+	if (m_currShow == NULL)
 	{
 		qDebug() << Q_FUNC_INFO << "Invalid show !";
 		return;
-	} 
-	qDebug() << "Got the show, getting the time\n";
+	}
 
+	//Dont record, unless we are at out start time
+	if (m_currShow->getElapsedTime() <= m_prevShowTime)
+		return;
 
-	qDebug() << "Time " << m_show->getElapsedTime();
-	
-	//quint32 startTime = m_chaser->getStartTime();
-	//qDebug("Chaser start time %i elaspe %i\n", startTime, m_chaser->elapsed());
-
-	int note = channel-128;
-	qDebug() << "NoteV2: " << note << " length " << sceneValues.length();
+	int note = channel-128; //Start with midi channel 128 which is the first note
 	if (note >= 0 && note < sceneValues.length())
 	{
-		quint32 duration = m_show->getElapsedTime() - m_chaser->totalDuration();
-		qDebug() << "Duration " <<  duration << " show elapsed " << m_show->getElapsedTime() << " chaser duration " << m_chaser->totalDuration();
+		quint32 duration = m_currShow->getElapsedTime() - m_prevShowTime;
+		m_prevShowTime = m_currShow->getElapsedTime();
+
 		//Set the last step duration
 		ChaserStep pStep = m_chaser->stepAt(m_chaser->stepsCount()-1);
 		pStep.duration = duration;
@@ -577,7 +583,6 @@ void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, ucha
 		m_chaser->addStep(step);
 		qDebug() << "Adding: " << chan.value << " note=" << note << "step duration " << step.duration;
 	}
-	//printSteps();
 }
 
 
@@ -1216,10 +1221,12 @@ void ChaserEditor::updateTree(bool clear)
             item = new QTreeWidgetItem(m_tree);
         else
             item = m_tree->topLevelItem(i);
-        Q_ASSERT(item != NULL);
 
-        ChaserStep step(m_chaser->steps().at(i));
-        updateItem(item, step);
+				if (item != NULL) //If we are in the middle or recording then we have not updated the tree yet
+				{
+					ChaserStep step(m_chaser->steps().at(i));
+					updateItem(item, step);
+				}
     }
 
     m_tree->resizeColumnToContents(COL_NUM);
