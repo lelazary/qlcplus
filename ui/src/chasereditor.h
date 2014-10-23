@@ -72,7 +72,7 @@ public slots:
 
 private slots:
     void slotNameEdited(const QString& text);
- 		void slotInputValueChanged(quint32 universe, quint32 channel, uchar value);
+ 		void slotInputValueChanged(quint32 universe, quint32 channel, uchar value, const QString& mnote);
 		
 private:
     Doc* m_doc;

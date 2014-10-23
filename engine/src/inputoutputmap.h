@@ -503,6 +503,10 @@ public:
     bool inputSourceNames(const QLCInputSource *src,
                           QString& uniName, QString& chName) const;
 
+
+    /** Get the maping from the input channel to an output channel and value **/
+    bool inputSourceMap(const QLCInputSource *src, quint32& chMap, int& chValue) const;
+    
     /**
      * Get the default system input profile directory that contains installed
      * input profiles. The location varies greatly between platforms.

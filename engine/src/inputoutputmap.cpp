@@ -801,6 +801,52 @@ bool InputOutputMap::inputSourceNames(const QLCInputSource *src,
     return true;
 }
 
+bool InputOutputMap::inputSourceMap(const QLCInputSource *src, quint32& chMap, int& chValue) const
+{
+    if (src == NULL || src->isValid() == false)
+        return false;
+
+    if (src->universe() >= universes())
+        return false;
+
+    InputPatch* pat = m_universeArray.at(src->universe())->inputPatch();
+    if (pat == NULL)
+    {
+        /* There is no patch for the given universe */
+        return false;
+    }
+
+    QLCInputProfile* profile = pat->profile();
+    if (profile != NULL)
+    {
+        QLCInputChannel* ich;
+        QString name;
+
+        /* User can input the channel number by hand, so put something
+           rational to the channel name in those cases as well. */
+        //ushort page = src->page();
+        ushort channel = (src->channel() & 0x0000FFFF);
+
+        ich = profile->channel(channel);
+        if (ich != NULL)
+        {
+          QString name = ich->name();
+          QStringList mapValue = name.split(" ");
+          chMap = mapValue[0].toInt();
+          if (mapValue.length() > 1)
+            chValue = mapValue[1].toInt();
+          else
+            chValue = -1;
+          return true;
+        }
+
+    } else {
+      return false;
+    }
+
+    return false;
+}
+
 QDir InputOutputMap::systemProfileDirectory()
 {
     return QLCFile::systemDirectory(QString(INPUTPROFILEDIR), QString(KExtInputProfile));

@@ -527,24 +527,26 @@ void ChaserEditor::slotRecord(bool state)
 
 			//Add input connector
 			connect(m_doc->inputOutputMap(),
-					SIGNAL(inputValueChanged(quint32,quint32,uchar)),
-					this, SLOT(slotInputValueChanged(quint32,quint32,uchar)));
+					SIGNAL(inputValueChanged(quint32,quint32,uchar,const QString&)),
+					this, SLOT(slotInputValueChanged(quint32,quint32,uchar, const QString&)));
 			
 		}
     else
     {
  			qDebug() << "Record chaser stopped\n";
  			disconnect(m_doc->inputOutputMap(),
- 					SIGNAL(inputValueChanged(quint32,quint32,uchar)),
- 					this, SLOT(slotInputValueChanged(quint32,quint32,uchar)));
+ 					SIGNAL(inputValueChanged(quint32,quint32,uchar, const QString&)),
+ 					this, SLOT(slotInputValueChanged(quint32,quint32,uchar, const String&)));
 			updateTree(true);
 			
     }
 }
 
-void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, uchar value)
+void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, uchar value, const QString& mnote)
 {
-	qDebug() << "Input: " << universe << " " << channel << " " << value;
+	qDebug() << "Input: " << universe << " " << channel << " " << value << " Note:" << mnote;
+
+
 	//Get the scene values
 	Scene *currScene = qobject_cast<Scene*> (m_doc->function(m_chaser->getBoundSceneID()));
 	QList<SceneValue>  sceneValues = currScene->values();
@@ -555,12 +557,27 @@ void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, ucha
 		return;
 	}
 
-	//Dont record, unless we are at out start time
-	if (m_currShow->getElapsedTime() <= m_prevShowTime)
+	//Dont record, unless we are at our start time
+	if (m_currShow->getElapsedTime() < m_prevShowTime)
 		return;
 
-	int note = channel-128; //Start with midi channel 128 which is the first note
-	if (note >= 0 && note < sceneValues.length())
+  
+  quint32 chMap = 0; 
+  int chValue = 0;
+  QLCInputSource* inputSource = new QLCInputSource(universe, channel);
+  if (!m_doc->inputOutputMap()->inputSourceMap(inputSource,chMap, chValue))
+  {
+    //Default to midi note 0 at channel 128
+    chMap = 128 - channel;
+    chValue = value;
+  }
+  //If we are not setting the channel value, then set it from the given intput value
+  if (chValue == -1) 
+    chValue = value;
+
+  qDebug() << "Map: " << chMap << " " << chValue;
+
+	if (chMap < (quint32)sceneValues.length())
 	{
 		quint32 duration = m_currShow->getElapsedTime() - m_prevShowTime;
 		m_prevShowTime = m_currShow->getElapsedTime();
@@ -573,15 +590,15 @@ void ChaserEditor::slotInputValueChanged(quint32 universe, quint32 channel, ucha
 
 		ChaserStep step(m_chaser->getBoundSceneID(), 0, duration, 0);
 		step.duration =  0;
-		SceneValue chan = sceneValues[note];
-		chan.value = value;
+		SceneValue chan = sceneValues[chMap];
+    chan.value = chValue;
 		step.values.append(chan);
 		//Set the scene value
 		if (step.values.count() > 0)
 			emit applyValues(step.values);
 
 		m_chaser->addStep(step);
-		qDebug() << "Adding: " << chan.value << " note=" << note << "step duration " << step.duration;
+		qDebug() << "Adding: " << chan.value << " chMap=" << chMap << "step duration " << step.duration;
 	}
 }
 
